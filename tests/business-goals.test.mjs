@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{monthlyGoal}from'../business-goals.mjs';
+const now='2026-09-17T16:00:00Z';
+test('calendar goal counts current month in Brasilia and deduplicates sales',()=>{const s={id:'s',amount:2000,saleStageEnteredAt:'2026-09-01T03:00:00Z'};const r=monthlyGoal({retrievedAt:now,rows:[s,s,{id:'prior',amount:9000,saleStageEnteredAt:'2026-09-01T02:59:59Z'}]},now);assert.equal(r.amount,2000);assert.equal(r.remaining,28000);assert.equal(r.remainingDays,14);assert.equal(r.requiredDaily,2000);});
+test('goal above target has no negative gap or required pace',()=>{const r=monthlyGoal({retrievedAt:now,rows:[{id:'s',amount:31000,saleStageEnteredAt:now}]},now);assert.equal(r.remaining,0);assert.equal(r.requiredDaily,0);assert.ok(r.percent>100);});
+test('previous month snapshot cannot evaluate the current month',()=>{const r=monthlyGoal({retrievedAt:'2026-08-31T12:00:00Z',rows:[]},now);assert.equal(r.available,false);assert.equal(r.amount,null);});

@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {salesReport,filterSalesRows,validateSalesRange} from '../sales-report.mjs';
+const row=(id,date,amount=10)=>({id,contactId:id,name:id,phone:'',opportunityName:id,amount,leadCreatedAt:'2026-09-01T03:00:00Z',saleStageEnteredAt:date});
+test('range includes full Brasilia days and excludes the next midnight',()=>{const rows=[row('before','2026-09-02T02:59:59Z'),row('first','2026-09-02T03:00:00Z'),row('last','2026-09-03T02:59:59Z'),row('after','2026-09-03T03:00:00Z')];assert.deepEqual(filterSalesRows(rows,{start:'2026-09-02',end:'2026-09-02'}).map(r=>r.id),['first','last']);});
+test('report recalculates totals and cycle and fills days with zero',()=>{const r=salesReport({rows:[row('a','2026-09-02T03:00:00Z',25),row('b','2026-09-05T03:00:00Z',90)]},{start:'2026-09-01',end:'2026-09-03'});assert.equal(r.opportunityCount,1);assert.equal(r.totalValue,25);assert.equal(r.averageDaysToSale,1);assert.deepEqual(r.series.map(b=>b.count),[0,1,0]);});
+test('monthly chart and search match filtered rows and empty period',()=>{const snapshot={rows:[row('Ana','2026-09-02T03:00:00Z',10.1),row('Ana 2','2026-09-03T03:00:00Z',20.2),row('Bia','2026-09-04T03:00:00Z',100)]};const r=salesReport(snapshot,{query:'ana',grouping:'month'});assert.equal(r.totalValue,30.3);assert.equal(r.series[0].value,30.3);assert.equal(r.series[0].count,2);const empty=salesReport(snapshot,{start:'2020-01-01',end:'2020-01-02'});assert.equal(empty.averageDaysToSale,null);assert.deepEqual(empty.series.map(b=>b.count),[0,0]);});
+test('rejects impossible and reversed dates',()=>{assert.throws(()=>validateSalesRange('2026-02-30','2026-03-01'));assert.throws(()=>validateSalesRange('2026-09-02','2026-09-01'));});

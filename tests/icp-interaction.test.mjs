@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {interactionOf,matchesInteraction} from '../icp.mjs';
+const sources={messages:'2026-10-01T12:00:00Z',approaches:'2026-10-01T12:01:00Z'};const p={dateAdded:'2026-09-01',messageCoverage:true};
+test('resposta em qualquer momento tem prioridade sobre envio',()=>assert.equal(interactionOf({...p,firstReply:'2026-09-02',firstSent:'2026-09-03'},sources),'responded'));
+test('separa enviados sem resposta de ausência de troca e cobertura',()=>{assert.equal(interactionOf({...p,firstSent:'2026-09-02'},sources),'waiting');assert.equal(interactionOf(p,sources),'untouched');assert.equal(interactionOf({...p,messageCoverage:false},sources),'unknown');assert.equal(interactionOf({...p,dateAdded:'2026-10-01T12:00:30Z'},sources),'unknown')});
+test('nunca responderam agrega os dois grupos e não inclui cobertura desconhecida',()=>{const rows=['responded','waiting','untouched','unknown'].map(interaction=>({interaction}));assert.equal(rows.filter(r=>matchesInteraction(r,'never')).length,2);assert.equal(rows.filter(r=>matchesInteraction(r,'all')).length,4)});
